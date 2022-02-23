@@ -1,0 +1,2 @@
+. venv/bin/activate
+python pubsub.py --topic smart_window --root-ca certs/Amazon-root-CA-1.pem --cert certs/certificate.pem.crt --key certs/private.pem.key --endpoint a31gd9kluhs5xl-ats.iot.us-east-2.amazonaws.com --count 0
