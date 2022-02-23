@@ -43,7 +43,8 @@ class messenger:
                     if qos is None:
                         sys.exit("Server rejected resubscribe to topic: {}".format(topic))
 
-        def on_msg_received(payload, dup, qos, retain, **kwargs):
+        # def on_msg_received(payload, dup, qos, retain, **kwargs):
+        def on_msg_received(payload, **kwargs):
             payload = json.loads(payload)
             print(f"received msg {payload}")
             on_message_received(code=payload['code'], data=payload['data'], msg=payload['msg'])

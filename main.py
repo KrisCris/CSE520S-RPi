@@ -1,18 +1,16 @@
-from awscrt import io, mqtt, auth, http
-from awsiot import mqtt_connection_builder
-import sys
 import time
-from uuid import uuid4
-
-import sensors
-from motor import motor
+from sensors import sensors
 from messenger import messenger
 
 
 # Callback when the subscribed topic receives a message
 def on_message_received(code:int ,msg:str ,data:dict):
-    if 'window' in data and data['window'] == True:
-          motor(1,-1)
+    inst = sensors.get_inst()
+    if 'window' in data:
+        if (data['window'] == True):
+            inst.open_window()
+        else:
+            inst.close_window()
 
 
 if __name__ == '__main__':
@@ -23,17 +21,24 @@ if __name__ == '__main__':
         conn.subscribe('smart_window')
 
 
-        sensors.setup()
+        inst = sensors.get_inst()
 
         while True:
             conn.send(topic="smart_window", code=1, msg='info', data={
-                'dht': sensors.getTempHumid(),
-                'isRaining': sensors.isRaining(),
-                'window': True
+                'dht': inst.get_temp_humid(),
+                'isRaining': inst.is_rain(),
+                # 'window': True
+            })
+            time.sleep(1)
+            conn.send(topic="smart_window", code=1, msg='info', data={
+                'dht': inst.get_temp_humid(),
+                'isRaining': inst.is_rain(),
+                # 'window': False
             })
             time.sleep(1)
 
 
     except KeyboardInterrupt:
         conn.disconnect()
+
 
