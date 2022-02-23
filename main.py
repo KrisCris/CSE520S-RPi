@@ -37,3 +37,4 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         conn.disconnect()
+        sensor_inst.destroy()

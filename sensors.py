@@ -39,9 +39,7 @@ class sensors:
 
     def setup(self):
         GPIO.setmode(GPIO.BCM)
-        GPIO.cleanup()
-        global dht11_inst
-        dht11_inst = dht11.DHT11(pin=self.pins["dht"])
+        self.dht11 = dht11.DHT11(pin=self.pins["dht"])
 
         GPIO.setup(self.pins["rain"], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         for pin in self.pins['motor']:
@@ -73,8 +71,7 @@ class sensors:
 
 
     def get_temp_humid(self):
-        global dht11_inst
-        res = dht11_inst.read()
+        res = self.dht11.read()
         if res.is_valid():
             return res.temperature, res.humidity
         else:
