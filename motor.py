@@ -18,14 +18,14 @@ def motor(speed, dir):
     GPIO.output(pin, False)
   # Define advanced sequence
   # as shown in manufacturers datasheet
-  Seq = [[1,0,0,1],
-        [1,0,0,0],
+  Seq = [[1,0,0,0],
         [1,1,0,0],
         [0,1,0,0],
         [0,1,1,0],
         [0,0,1,0],
         [0,0,1,1],
-        [0,0,0,1]]
+        [0,0,0,1],
+        [1,0,0,1]]
           
   StepCount = len(Seq)
   StepDir = dir # Set to 1 or 2 for clockwise
@@ -41,12 +41,12 @@ def motor(speed, dir):
   count = 1000
   while count > 0:
     count -= 1
-    print(StepCounter)
-    print(Seq[StepCounter])
+    # print(StepCounter)
+    # print(Seq[StepCounter])
     for pin in range(0, 4):
       xpin = StepPins[pin] 
       if Seq[StepCounter][pin]!=0:
-        print(" Enable GPIO %i" %(xpin))
+        # print(" Enable GPIO %i" %(xpin))
         GPIO.output(xpin, True)
       else:
         GPIO.output(xpin, False)
@@ -59,8 +59,6 @@ def motor(speed, dir):
       StepCounter = StepCount+StepDir
     # Wait before moving on
     time.sleep(WaitTime)
-
-
 
 
 if __name__ == "__main__":
