@@ -1,2 +1,2 @@
 . venv/bin/activate
-python pubsub.py
+python main.py
