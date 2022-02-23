@@ -6,18 +6,17 @@ from uuid import uuid4
 
 
 class messenger:
-    def __init__(self, on_message_received) -> None:
+    def __init__(self) -> None:
         self.event_loop_group = io.EventLoopGroup(1)
         self.host_resolver = io.DefaultHostResolver(self.event_loop_group)
-        self.client_bootstrap = io.ClientBootstrap(self.event_loop_group, self.host_resolver)
+        self.client_bootstrap = io.ClientBootstrap(
+            self.event_loop_group, self.host_resolver)
 
         self.endpoint = 'a31gd9kluhs5xl-ats.iot.us-east-2.amazonaws.com'
         self.cert_path = 'certs/certificate.pem.crt'
         self.pk_path = 'certs/private.pem.key'
         self.ca_path = 'certs/Amazon-root-CA-1.pem'
         self.client_id = f"RaspberryPi-{str(uuid4())}"
-        # self.receiver_topic = 'remote'
-        # self.sender_topic = 'rpi'
 
         # Callback when connection is accidentally lost.
         def on_connection_interrupted(connection, error, **kwargs):
@@ -25,7 +24,8 @@ class messenger:
 
         # Callback when an interrupted connection is re-established.
         def on_connection_resumed(connection, return_code, session_present, **kwargs):
-            print("Connection resumed. return_code: {} session_present: {}".format(return_code, session_present))
+            print("Connection resumed. return_code: {} session_present: {}".format(
+                return_code, session_present))
             if return_code == mqtt.ConnectReturnCode.ACCEPTED and not session_present:
                 print("Session did not persist. Resubscribing to existing topics...")
                 resubscribe_future, _ = connection.resubscribe_existing_topics()
@@ -35,19 +35,13 @@ class messenger:
                 resubscribe_future.add_done_callback(on_resubscribe_complete)
 
         def on_resubscribe_complete(resubscribe_future):
-                resubscribe_results = resubscribe_future.result()
-                print("Resubscribe results: {}".format(resubscribe_results))
+            resubscribe_results = resubscribe_future.result()
+            print("Resubscribe results: {}".format(resubscribe_results))
 
-                for topic, qos in resubscribe_results['topics']:
-                    if qos is None:
-                        sys.exit("Server rejected resubscribe to topic: {}".format(topic))
-
-        # def on_msg_received(payload, dup, qos, retain, **kwargs):
-        def on_msg_received(payload, **kwargs):
-            payload = json.loads(payload)
-            print(f"received msg {payload}")
-            on_message_received(code=payload['code'], data=payload['data'], msg=payload['msg'])
-        
+            for topic, qos in resubscribe_results['topics']:
+                if qos is None:
+                    sys.exit(
+                        "Server rejected resubscribe to topic: {}".format(topic))
 
         self.mqtt_connection = mqtt_connection_builder.mtls_from_path(
             endpoint=self.endpoint,
@@ -64,9 +58,8 @@ class messenger:
             http_proxy_options=None
         )
 
-        print(f"Connecting to {self.endpoint} with client ID '{self.client_id}'...")
-        self.on_message_received = on_msg_received
-
+        print(
+            f"Connecting to {self.endpoint} with client ID '{self.client_id}'...")
 
     def connect(self):
         conn_future = self.mqtt_connection.connect()
@@ -74,14 +67,13 @@ class messenger:
         print(conn_res)
         return conn_res
 
-
     def send(self, topic: str, code: int, msg: str, data: dict) -> str:
         resp = json.dumps({
             'code': code,
             'msg': msg,
             'data': data
         })
-        
+
         self.mqtt_connection.publish(
             topic=topic,
             payload=resp,
@@ -90,18 +82,23 @@ class messenger:
 
         print(f"sent msg to topic {topic}, content {resp}")
 
+    def subscribe(self, topic: str, callback):
+        # def on_msg_received(payload, dup, qos, retain, **kwargs):
+        def on_msg_received(payload, **kwargs):
+            payload = json.loads(payload)
+            print(f"received msg {payload}")
+            callback(code=payload['code'],
+                     data=payload['data'], msg=payload['msg'])
 
-    def subscribe(self, topic):
         print(f"Subscribing to topic '{topic}'...")
-        
+
         subscribe_future, packet_id = self.mqtt_connection.subscribe(
             topic=topic,
             qos=mqtt.QoS.AT_LEAST_ONCE,
-            callback=self.on_message_received)
+            callback=on_msg_received)
 
         subscribe_result = subscribe_future.result()
         print("Subscribed with {}".format(str(subscribe_result['qos'])))
-    
 
     def disconnect(self):
         print("Disconnecting...")

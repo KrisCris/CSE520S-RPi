@@ -3,6 +3,7 @@ import time
 import RPi.GPIO as GPIO
 import dht11
 
+
 class sensors:
     inst = None
 
@@ -29,13 +30,11 @@ class sensors:
         self.setup()
         sensors.inst = self
 
-    
     @staticmethod
     def get_inst():
         if sensors.inst == None:
             sensors.inst = sensors()
         return sensors.inst
-        
 
     def setup(self):
         GPIO.setmode(GPIO.BCM)
@@ -46,29 +45,25 @@ class sensors:
             GPIO.setup(pin, GPIO.OUT)
             GPIO.output(pin, 0)
 
-
     def is_rain(self):
         return GPIO.input(self.pins["rain"]) == False
 
-
-    def run_motor(self, degree:int, direction=1):
+    def run_motor(self, degree: int, direction=1):
         cycles = int((degree % 360) / 360 * 512)
         for _ in range(cycles):
             # 8 = len(motor_seq)
             for step in range(8):
                 # 4 = # pins
                 for pin in range(4):
-                    GPIO.output(self.pins['motor'][pin], self.motor_seq[step * direction][pin])
+                    GPIO.output(self.pins['motor'][pin],
+                                self.motor_seq[step * direction][pin])
                 time.sleep(0.001)
-
 
     def open_window(self):
         self.run_motor(degree=90, direction=1)
 
-
     def close_window(self):
         self.run_motor(degree=90, direction=-1)
-
 
     def get_temp_humid(self):
         res = self.dht11.read()
@@ -77,15 +72,5 @@ class sensors:
         else:
             return False
 
-    
     def destroy(self):
         GPIO.cleanup()
-
-
-# if __name__ == "__main__":
-#     setup()
-#     while(True):
-#         res = get_temp_humid()
-#         if res:
-#             print(f"temp={res[0]}, humid={res[1]}")
-#             print(f"raining? {is_rain()}")
