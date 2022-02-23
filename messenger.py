@@ -2,7 +2,6 @@ import json
 from awscrt import io, mqtt, auth, http
 from awsiot import mqtt_connection_builder
 import sys
-import time
 from uuid import uuid4
 
 

@@ -16,29 +16,24 @@ def on_message_received(code:int ,msg:str ,data:dict):
 if __name__ == '__main__':
     try:
         conn = messenger(on_message_received=on_message_received)
+        sensor_inst = sensors.get_inst()
+
         conn.connect()
-
         conn.subscribe('smart_window')
-
-
-        inst = sensors.get_inst()
 
         while True:
             conn.send(topic="smart_window", code=1, msg='info', data={
-                'dht': inst.get_temp_humid(),
-                'isRaining': inst.is_rain(),
+                'dht': sensor_inst.get_temp_humid(),
+                'isRaining': sensor_inst.is_rain(),
                 # 'window': True
             })
             time.sleep(1)
             conn.send(topic="smart_window", code=1, msg='info', data={
-                'dht': inst.get_temp_humid(),
-                'isRaining': inst.is_rain(),
+                'dht': sensor_inst.get_temp_humid(),
+                'isRaining': sensor_inst.is_rain(),
                 # 'window': False
             })
             time.sleep(1)
 
-
     except KeyboardInterrupt:
         conn.disconnect()
-
-
