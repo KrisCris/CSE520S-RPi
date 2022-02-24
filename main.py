@@ -10,27 +10,40 @@ if __name__ == '__main__':
 
         conn.connect()
 
-        def on_window_action(code: int, msg: str, data: dict):
-            if 'window' in data:
-                if (data['window'] == True):
-                    sensor_inst.open_window()
-                else:
-                    sensor_inst.close_window()
-        conn.subscribe('smart_window', on_window_action)
+        def on_remote_control(payload: dict):
+            conn.lock = True
+            if payload.get("needOpen"):
+                sensor_inst.open_window()
+            else:
+                sensor_inst.close_window()
+            conn.send(topic="resume", payload={}, preempt=True)
+            conn.lock = False
 
+        conn.subscribe('forceAction', on_remote_control)
+
+        def on_sync_request(payload: dict):
+            topicId = payload.get("topicId")
+            conn.send(topic="smart_window", payload={
+                'code':1,
+                'msg':'info',
+                'temperature': ret[0],
+                'humidity': ret[1],
+                'isRaining': sensor_inst.is_rain(),
+                'windowAngle': sensor_inst.get_motor_angle()
+            })
+        
+        # TODO Send info based on request
         while True:
-            conn.send(topic="smart_window", code=1, msg='info', data={
-                'dht': sensor_inst.get_temp_humid(),
+            ret = sensor_inst.get_temp_humid()
+            conn.send(topic="smart_window", payload={
+                'code':1,
+                'msg':'info',
+                'temperature': ret[0],
+                'humidity': ret[1],
                 'isRaining': sensor_inst.is_rain(),
-                'window': True
+                'windowAngle': sensor_inst.get_motor_angle()
             })
-            time.sleep(1)
-            conn.send(topic="smart_window", code=1, msg='info', data={
-                'dht': sensor_inst.get_temp_humid(),
-                'isRaining': sensor_inst.is_rain(),
-                'window': False
-            })
-            time.sleep(1)
+            time.sleep(0.5)
 
     except KeyboardInterrupt:
         conn.disconnect()
