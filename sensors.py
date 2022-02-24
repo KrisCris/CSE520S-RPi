@@ -26,15 +26,15 @@ class sensors:
         [0, 0, 0, 1],
         [1, 0, 0, 1]
     ]
+    dht11_inst = None
+
     serialized_data = {
         "motor_angle": 0,
         "last_success_read": [24, 50],
         "did_rain": False
     }
-    dht11_inst = None
-
+    
     fail_count = 0
-
     openAngle = 90
     closeAngle = 0
 
@@ -55,7 +55,7 @@ class sensors:
             with io.open('sensor_data.json', 'w') as sensor_config:
                 sensor_config.write(json.dumps(self.serialized_data))        
 
-        
+    
     @staticmethod
     def get_inst():
         if sensors.inst == None:
