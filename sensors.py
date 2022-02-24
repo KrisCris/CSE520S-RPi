@@ -112,7 +112,6 @@ class sensors:
         res = self.dht11.read()
         if not res.is_valid():
             self.fail_count += 1
-            print(f"dht reading failed for {self.fail_count} time(s)")
             if self.fail_count > 60:
                 return None, None
         else:
