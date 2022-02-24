@@ -7,6 +7,7 @@ from uuid import uuid4
 
 class messenger:
     def __init__(self) -> None:
+        self.lock = False
         self.event_loop_group = io.EventLoopGroup(1)
         self.host_resolver = io.DefaultHostResolver(self.event_loop_group)
         self.client_bootstrap = io.ClientBootstrap(
@@ -67,12 +68,10 @@ class messenger:
         print(conn_res)
         return conn_res
 
-    def send(self, topic: str, code: int, msg: str, data: dict) -> str:
-        resp = json.dumps({
-            'code': code,
-            'msg': msg,
-            'data': data
-        })
+    def send(self, topic: str, payload: dict, preempt: bool=False) -> str:
+        if (self.lock and not bool):
+            return
+        resp = json.dumps(payload)
 
         self.mqtt_connection.publish(
             topic=topic,
@@ -87,8 +86,7 @@ class messenger:
         def on_msg_received(payload, **kwargs):
             payload = json.loads(payload)
             print(f"received msg {payload}")
-            callback(code=payload['code'],
-                     data=payload['data'], msg=payload['msg'])
+            callback(payload)
 
         print(f"Subscribing to topic '{topic}'...")
 
