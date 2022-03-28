@@ -31,7 +31,7 @@ class sensors:
     serialized_data = {
         "motor_angle": 0,
         "last_success_read": [24, 50],
-        "did_rain": False
+        # "did_rain": False
     }
     
     fail_count = 0
@@ -78,7 +78,9 @@ class sensors:
 
 
     def run_motor(self, degree: int, direction=1):
+        print(f"[Debug] Rotate window from {self.serialized_data['motor_angle']} to {(self.serialized_data['motor_angle'] + degree * direction) % 360}")
         cycles = int((degree % 360) / 360 * 512)
+        # count = 0
         for _ in range(cycles):
             # 8 = len(motor_seq)
             for step in range(8):
@@ -86,11 +88,15 @@ class sensors:
                 for pin in range(4):
                     GPIO.output(self.pins['motor'][pin],
                                 self.motor_seq[step * direction][pin])
+                    # count += 1
+                    # print(count)
                 time.sleep(0.001)
         # reset pins
         for pin in range(4):
             GPIO.output(self.pins['motor'][pin], 0)
         self.serialized_data['motor_angle'] = (self.serialized_data['motor_angle'] + degree * direction) % 360
+        with io.open('sensor_data.json', 'w') as sensor_config:
+            sensor_config.write(json.dumps(self.serialized_data))
 
 
     def get_motor_angle(self):
@@ -99,13 +105,23 @@ class sensors:
 
     def open_window(self):
         angle = 90 - self.serialized_data["motor_angle"]
-        print(angle)
         self.run_motor(degree=angle, direction=1)
 
 
     def close_window(self):
         # if ((self.serialized_data["motor_angle"] + 90) % 360 < 270):
         self.run_motor(degree=self.serialized_data["motor_angle"], direction=-1)
+
+    
+    def rotate_window(self, angle: int):
+        print("rotate_angle")
+        if angle > 90 or angle < 0:
+            return
+        if angle > self.serialized_data["motor_angle"]:
+            self.run_motor(degree=angle - self.serialized_data["motor_angle"], direction=1)
+        else:
+            self.run_motor(degree=self.serialized_data["motor_angle"]-angle, direction=-1)
+
 
 
     def get_temp_humid(self):
@@ -115,7 +131,7 @@ class sensors:
             if self.fail_count > 60:
                 return None, None
         else:
-            self.serialized_data["last_success_read"][0], self.serialized_data["last_success_read"][1] = res.temperature, res.temperature
+            self.serialized_data["last_success_read"][0], self.serialized_data["last_success_read"][1] = res.temperature, res.humidity
             self.fail_count = 0
 
         return self.serialized_data["last_success_read"][0], self.serialized_data["last_success_read"][1]

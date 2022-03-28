@@ -16,42 +16,51 @@ if __name__ == '__main__':
             "windowAngle": 0
         }
 
+        ### Remote Control
         def on_remote_control(payload: dict):
             conn.lock = True
-            if payload.get("needOpen"):
-                sensor_inst.open_window()
-            else:
-                sensor_inst.close_window()
+            if "angle" in payload:
+                sensor_inst.rotate_window(payload.get("angle"))
+                
             conn.send(topic="resume", payload={}, preempt=True)
             conn.lock = False
+            
 
         conn.subscribe('remote_control', on_remote_control)
+        ###
 
+
+        ### Sync Data
         def on_sync_request(payload: dict):
-            topicId = payload.get("topicId")
-            conn.send(topic=topicId, payload=last_data)
+            # topicId = payload.get("topicId")
+            conn.send(topic="sync_end", payload=last_data, preempt=True)
 
-        conn.subscribe('sync_data', on_sync_request)
+        conn.subscribe('sync_start', on_sync_request)
+        ###
         
-        # TODO Send info based on request
+        ### Update Data when Changed
         while True:
             ret = sensor_inst.get_temp_humid()
             temp, humid = int(ret[0]), int(ret[1])
             is_rain = sensor_inst.is_rain()
             window_angle = sensor_inst.get_motor_angle()
+
             if temp != last_data['temperature'] \
                 or humid != last_data['humidity'] \
                 or is_rain != last_data['isRaining'] \
                 or window_angle != last_data['windowAngle']:
+
+                if is_rain and is_rain != last_data['isRaining']:
+                    sensor_inst.rotate_window(0)
+
                 payload = {
+                    'isRaining': is_rain,
+                    'windowAngle': window_angle,
                     'temperature': temp,
                     'humidity': humid,
-                    'isRaining': is_rain,
-                    'windowAngle': window_angle
                 }
                 last_data = payload
                 conn.send(topic="boardcast", payload=payload)
-            # time.sleep(0.1)
 
     except KeyboardInterrupt:
         conn.disconnect()
