@@ -69,7 +69,7 @@ class messenger:
         return conn_res
 
     def send(self, topic: str, payload: dict, preempt: bool=False) -> str:
-        if (self.lock and not bool):
+        if (self.lock and not preempt):
             return
         resp = json.dumps(payload)
 
