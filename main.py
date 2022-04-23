@@ -33,6 +33,8 @@ if __name__ == '__main__':
         ### Sync Data
         def on_sync_request(payload: dict):
             # topicId = payload.get("topicId")
+            import time
+            last_data['time']=time.time()
             conn.send(topic="sync_end", payload=last_data, preempt=True)
 
         conn.subscribe('sync_start', on_sync_request)
